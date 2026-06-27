@@ -6,6 +6,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 sudo apt update
 sudo apt install -y git python3 python3-pip python3-venv curl postgresql nginx php8.5 php8.5-fpm php8.5-xml php8.5-gd php8.5-pgsql php8.5-sqlite3 composer
 
+# Add produser to ww-data group.
+sudo usermod -aG www-data produser
 
 # Activate venv and install pinned dependencies
 if [ -d "$SCRIPT_DIR/.venv" ] && [ -f "$SCRIPT_DIR/requirements.txt" ]; then
@@ -26,6 +28,14 @@ if [ -f .env ]; then
 		rm -rf /tmp/pixelwise-model
 	fi
 fi
+
+# Install Composer dependencies.
+if command -v composer >/dev/null 2>&1; then
+    cd /var/www/pixelwise
+
+    composer install
+fi
+
 
 # Install systemd unit
 if [ -f deploy/pixelwise.service ] && command -v systemctl > /dev/null 2>&1 && id produser > /dev/null 2>&1; then
@@ -109,10 +119,7 @@ fi
 # Enable and start php8.5-fpm
 sudo systemctl enable --now php8.5-fpm
 
-# Install Composer dependencies and build Prod DB.
+# Build Prod DB.
 if command -v composer >/dev/null 2>&1; then
-    cd /var/www/pixelwise
-
-    composer install
     bin/console sulu:build prod --no-interaction
 fi
