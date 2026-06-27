@@ -29,6 +29,35 @@ if [ -f .env ]; then
 	fi
 fi
 
+# Install Nginx site and deploy the frontend on prod
+if [ -f deploy/pixelwise.nginx ] && \
+   command -v nginx >/dev/null 2>&1 && \
+   id produser >/dev/null 2>&1; then
+
+   # Set permissions for nginx.
+   sudo chgrp -R www-data /opt/pixelwise
+   sudo chmod -R g+rX /opt/pixelwise
+   sudo chmod -R g+rwX /opt/pixelwise/sulu/var
+
+    # Create symlink for the frontend files.
+    sudo ln -s /opt/pixelwise/sulu /var/www/pixelwise
+
+    # Substitute the API key into app.js.
+    KEY=$(grep ^SECRET_API_KEY /opt/pixelwise/.env \
+        | cut -d= -f2)
+    sudo sed -i \
+        "s/REPLACE_ME/$KEY/" \
+        /var/www/pixelwise/public/js/app.js
+
+    # Install the site config.
+    sudo cp deploy/pixelwise.nginx \
+        /etc/nginx/sites-available/pixelwise
+    sudo ln -sf /etc/nginx/sites-available/pixelwise \
+        /etc/nginx/sites-enabled/pixelwise
+    sudo rm -f /etc/nginx/sites-enabled/default
+    sudo nginx -t && sudo systemctl reload nginx
+fi
+
 # Install Composer dependencies.
 if command -v composer >/dev/null 2>&1; then
     cd /var/www/pixelwise
@@ -64,35 +93,6 @@ fi
 # Initialise the predictions table on every VM via Alchemy
 if [ -f "$SCRIPT_DIR/init_db.py" ] && [ -d "$SCRIPT_DIR/.venv" ]; then
 	(cd "$SCRIPT_DIR" && source .venv/bin/activate && python init_db.py)
-fi
-
-# Install Nginx site and deploy the frontend on prod
-if [ -f deploy/pixelwise.nginx ] && \
-   command -v nginx >/dev/null 2>&1 && \
-   id produser >/dev/null 2>&1; then
-
-   # Set permissions for nginx.
-   sudo chgrp -R www-data /opt/pixelwise
-   sudo chmod -R g+rX /opt/pixelwise
-   sudo chmod -R g+rwX /opt/pixelwise/sulu/var
-
-    # Create symlink for the frontend files.
-    sudo ln -s /opt/pixelwise/sulu /var/www/pixelwise
-
-    # Substitute the API key into app.js.
-    KEY=$(grep ^SECRET_API_KEY /opt/pixelwise/.env \
-        | cut -d= -f2)
-    sudo sed -i \
-        "s/REPLACE_ME/$KEY/" \
-        /var/www/pixelwise/public/js/app.js
-
-    # Install the site config.
-    sudo cp deploy/pixelwise.nginx \
-        /etc/nginx/sites-available/pixelwise
-    sudo ln -sf /etc/nginx/sites-available/pixelwise \
-        /etc/nginx/sites-enabled/pixelwise
-    sudo rm -f /etc/nginx/sites-enabled/default
-    sudo nginx -t && sudo systemctl reload nginx
 fi
 
 # Grant produser passwordless sudo for the one restart auto-deploy needs
