@@ -1,0 +1,49 @@
+server {
+    listen 80;
+    listen [::]:80;
+
+    server_name 192.168.64.2;
+    root /var/www/pixelwise/public;
+
+    error_log /var/log/nginx/pixelwise-cms.error.log;
+    access_log /var/log/nginx/pixelwise-cms.at.access.log;
+
+        # recommended security headers
+    add_header X-Frame-Options sameorigin;
+    add_header X-Content-Type-Options nosniff;
+    add_header X-XSS-Protection "1; mode=block";
+
+    location / {
+        # try to serve file directly, fallback to index.php
+        try_files $uri /index.php$is_args$args;
+    }
+
+    # Forward API calls to uvicorn
+    location /api/ {
+        proxy_pass http://0.0.0.0:8000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # expire
+    location ~* \.(?:ico|css|js|gif|webp|avif|jpe?g|png|svg|woff|woff2|eot|ttf|mp4)$ {
+        # try to serve file directly, fallback to index.php
+        try_files $uri /index.php$is_args$args;
+        access_log off;
+        expires 1y;
+        add_header Pragma public;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # pass the PHP scripts to FastCGI server from upstream phpfcgi
+    location ~ ^/(index|config)\.php(/|$) {
+        fastcgi_pass unix:/var/run/php/php8.5-fpm.sock; # replace with your used php version
+        fastcgi_split_path_info ^(.+\.php)(/.*)$;
+        include fastcgi_params;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        fastcgi_param DOCUMENT_ROOT $realpath_root;
+        internal;
+    }
+}
