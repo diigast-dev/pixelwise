@@ -1,7 +1,17 @@
 {% extends 'base.html.twig' %}
 
 {% block content %}
-    <h1>{{ content.title }}</h1>
+        <h1>{{ content.title }}</h1>
 
-    {{ content.article|raw }}
+        <p>{{ content.description|raw }}</p>
+        <canvas id="pad" width="280" height="280"></canvas>
+        <div class="controls">
+        <button id="classify">Classify</button>
+        <button id="clear">Clear</button>
+        </div>
+
+        <div id="result"></div>
+        <h2>Recent predictions</h2>
+        <ul id="history"></ul>
+        <script src="/js/app.js"></script>
 {% endblock %}
