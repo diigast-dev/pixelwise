@@ -15,20 +15,6 @@ if [ -d "$SCRIPT_DIR/.venv" ] && [ -f "$SCRIPT_DIR/requirements.txt" ]; then
     pip install -r "$SCRIPT_DIR/requirements.txt"
 fi
 
-
-# Pull the model
-if [ -f .env ]; then
-	set -a; source .env; set +a
-	if [ -n "${MODEL_REPO:-}" ] &&  [ -n "${MODEL_VERSION:-}" ]; then
-		mkdir -p models/
-		rm -rf /tmp/pixelwise-model
-		git clone --depth 1 --branch "$MODEL_VERSION" "$MODEL_REPO" /tmp/pixelwise-model
-		cp /tmp/pixelwise-model/*.pkl models/
-		cp /tmp/pixelwise-model/MODELCARD.md models/
-		rm -rf /tmp/pixelwise-model
-	fi
-fi
-
 # Install Nginx site and deploy the frontend on prod
 if [ -f deploy/pixelwise.nginx ] && \
    command -v nginx >/dev/null 2>&1 && \
@@ -65,6 +51,27 @@ if command -v composer >/dev/null 2>&1; then
     composer install
 fi
 
+# Enable and start php8.5-fpm
+sudo systemctl enable --now php8.5-fpm
+
+# Build Prod DB.
+if command -v composer >/dev/null 2>&1; then
+    bin/console sulu:build prod --no-interaction
+fi
+
+
+# Pull the model
+if [ -f .env ]; then
+        set -a; source .env; set +a
+        if [ -n "${MODEL_REPO:-}" ] &&  [ -n "${MODEL_VERSION:-}" ]; then
+                mkdir -p models/
+                rm -rf /tmp/pixelwise-model
+                git clone --depth 1 --branch "$MODEL_VERSION" "$MODEL_REPO" /tmp/pixelwise-model
+                cp /tmp/pixelwise-model/*.pkl models/
+                cp /tmp/pixelwise-model/MODELCARD.md models/
+                rm -rf /tmp/pixelwise-model
+        fi
+fi
 
 # Install systemd unit
 if [ -f deploy/pixelwise.service ] && command -v systemctl > /dev/null 2>&1 && id produser > /dev/null 2>&1; then
@@ -114,12 +121,4 @@ if [ -f "$SCRIPT_DIR/deploy/systemd/pixelwise-deploy.timer" ] \
         /etc/systemd/system/pixelwise-deploy.timer
     sudo systemctl daemon-reload
     sudo systemctl enable --now pixelwise-deploy.timer
-fi
-
-# Enable and start php8.5-fpm
-sudo systemctl enable --now php8.5-fpm
-
-# Build Prod DB.
-if command -v composer >/dev/null 2>&1; then
-    bin/console sulu:build prod --no-interaction
 fi
