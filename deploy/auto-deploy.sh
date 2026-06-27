@@ -26,4 +26,10 @@ if ! python -m pytest tests/; then
 fi
 
 sudo systemctl restart pixelwise
+
+# Clear Sulus Symfony Cache.
+cd /var/www/pixelwise
+bin/console cache:clear
+bin/console cache:warmup
+
 echo "Deployed: $REMOTE"
