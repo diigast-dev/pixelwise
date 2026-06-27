@@ -40,7 +40,7 @@ if [ -f deploy/pixelwise.nginx ] && \
    sudo chmod -R g+rwX /opt/pixelwise/sulu/var
 
     # Create symlink for the frontend files.
-    sudo ln -s /opt/pixelwise/sulu /var/www/pixelwise
+    sudo ln -sfn /opt/pixelwise/sulu /var/www/pixelwise
 
     # Substitute the API key into app.js.
     KEY=$(grep ^SECRET_API_KEY /opt/pixelwise/.env \
