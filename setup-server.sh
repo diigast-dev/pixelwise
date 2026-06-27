@@ -61,6 +61,11 @@ if [ -f deploy/pixelwise.nginx ] && \
    command -v nginx >/dev/null 2>&1 && \
    id produser >/dev/null 2>&1; then
 
+   # Set permissions for nginx.
+   sudo chgrp -R www-data /opt/pixelwise
+   sudo chmod -R g+rX /opt/pixelwise
+   sudo chmod -R g+rwX /opt/pixelwise/sulu/var
+
     # Create symlink for the frontend files.
     sudo ln -s /opt/pixelwise/sulu /var/www/pixelwise
 
