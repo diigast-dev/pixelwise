@@ -61,9 +61,8 @@ if [ -f deploy/pixelwise.nginx ] && \
    command -v nginx >/dev/null 2>&1 && \
    id produser >/dev/null 2>&1; then
 
-    # Deploy the frontend files.
-    sudo mkdir -p /var/www/pixelwise
-    sudo cp -r sulu/* /var/www/pixelwise/
+    # Create symlink for the frontend files.
+    ln -s sulu /var/www/pixelwise/
 
     # Substitute the API key into app.js.
     KEY=$(grep ^SECRET_API_KEY /opt/pixelwise/.env \
@@ -101,6 +100,9 @@ if [ -f "$SCRIPT_DIR/deploy/systemd/pixelwise-deploy.timer" ] \
     sudo systemctl daemon-reload
     sudo systemctl enable --now pixelwise-deploy.timer
 fi
+
+# Enable and start php8.5-fpm
+sudo systemctl enable --now php8.5-fpm
 
 # Install Composer dependencies and build Prod DB.
 if command -v composer >/dev/null 2>&1; then
