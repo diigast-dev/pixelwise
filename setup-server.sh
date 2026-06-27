@@ -62,7 +62,7 @@ if [ -f deploy/pixelwise.nginx ] && \
    id produser >/dev/null 2>&1; then
 
     # Create symlink for the frontend files.
-    sudo ln -s sulu /var/www/pixelwise/
+    sudo ln -s /opt/pixelwise/sulu /var/www/pixelwise
 
     # Substitute the API key into app.js.
     KEY=$(grep ^SECRET_API_KEY /opt/pixelwise/.env \
