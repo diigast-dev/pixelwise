@@ -3,7 +3,7 @@ Description=PixelWise API
 After=network.target
 
 [Service]
-User=producer
+User=produser
 WorkingDirectory=/opt/pixelwise
 EnvironmentFile=/opt/pixelwise/.env
 ExecStart=/opt/pixelwise/.venv/bin/uvicorn \
